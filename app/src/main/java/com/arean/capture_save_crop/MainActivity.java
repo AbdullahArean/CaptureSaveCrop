@@ -29,12 +29,11 @@ import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
 
-    ImageView userpic=null;
-    private static final int GalleryPick = 1;
+    ImageView targetframe =null;
     private static final int CAMERA_REQUEST = 100;
     private static final int STORAGE_REQUEST = 200;
-    String cameraPermission[];
-    String storagePermission[];
+    String[] cameraPermission;
+    String[] storagePermission;
     Button capture, crop, save;
 
     @Override
@@ -44,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Here we are initialising
         // the text and image View
-        userpic = findViewById(R.id.set_profile_image);
+        targetframe = findViewById(R.id.set_profile_image);
         capture = findViewById(R.id.capture);
         crop = findViewById(R.id.crop);
         save = findViewById(R.id.save);
@@ -81,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
         save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(userpic!=null) imagesavetomyphonegallery();
+                if(targetframe !=null) imagesavetomyphonegallery();
 
             }
         });
@@ -184,15 +183,15 @@ public class MainActivity extends AppCompatActivity {
             CropImage.ActivityResult result = CropImage.getActivityResult(data);
             if (resultCode == RESULT_OK) {
                 Uri resultUri = result.getUri();
-                Picasso.with(this).load(resultUri).into(userpic);
+                Picasso.with(this).load(resultUri).into(targetframe);
             }
         }
         if (requestCode == 100) {
             // BitMap is data structure of image file which store the image in memory
             Bitmap photo = (Bitmap) data.getExtras().get("data");
             // Set the image in imageview for display
-            userpic.setImageBitmap(photo);
-            Picasso.with(this).load(getImageUri(this, photo)).into(userpic);
+            targetframe.setImageBitmap(photo);
+            Picasso.with(this).load(getImageUri(this, photo)).into(targetframe);
         }
     }
     private Uri getImageUri(Context inContext, Bitmap inImage) {
@@ -221,7 +220,7 @@ public class MainActivity extends AppCompatActivity {
         Uri uri = contentResolver.insert(images,contentValues);
 
         try{
-            BitmapDrawable bitmapDrawable = (BitmapDrawable) userpic.getDrawable();
+            BitmapDrawable bitmapDrawable = (BitmapDrawable) targetframe.getDrawable();
             Bitmap bitmap = bitmapDrawable.getBitmap();
             OutputStream outputStream = contentResolver.openOutputStream(Objects.requireNonNull(uri));
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
