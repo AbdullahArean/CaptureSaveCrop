@@ -3,7 +3,7 @@ import android.Manifest;
 import android.app.AlertDialog;
 import android.content.ContentResolver;
 import android.content.ContentValues;
-import android.content.DialogInterface;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -11,12 +11,10 @@ import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.MediaStore;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -25,27 +23,18 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import com.squareup.picasso.Picasso;
 import com.theartofdev.edmodo.cropper.CropImage;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
 
-    ImageView userpic;
+    ImageView userpic=null;
     private static final int GalleryPick = 1;
     private static final int CAMERA_REQUEST = 100;
     private static final int STORAGE_REQUEST = 200;
-    private static final int IMAGEPICK_GALLERY_REQUEST = 300;
-    private static final int IMAGE_PICKCAMERA_REQUEST = 400;
     String cameraPermission[];
     String storagePermission[];
-    Uri imageuri;
     Button capture, crop, save;
 
     @Override
@@ -63,6 +52,9 @@ public class MainActivity extends AppCompatActivity {
         // allowing permissions of gallery and camera
         cameraPermission = new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE};
         storagePermission = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE};
+        if (!checkCameraPermission()) {
+            requestCameraPermission();
+        }
 
         // After clicking on text we will have
         // to choose whether to
@@ -76,6 +68,9 @@ public class MainActivity extends AppCompatActivity {
         capture.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (!checkCameraPermission()) {
+                    requestCameraPermission();
+                }
                 Intent camera_intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                 // Start the activity with camera_intent, and request pic id
                 startActivityForResult(camera_intent, 100);
@@ -86,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
         save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                imagesavetomyphonegallery();
+                if(userpic!=null) imagesavetomyphonegallery();
 
             }
         });
@@ -97,21 +92,18 @@ public class MainActivity extends AppCompatActivity {
         String options[] = {"Camera", "Gallery"};
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Pick Image From");
-        builder.setItems(options, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                if (which == 0) {
-                    if (!checkCameraPermission()) {
-                        requestCameraPermission();
-                    } else {
-                        pickFromGallery();
-                    }
-                } else if (which == 1) {
-                    if (!checkStoragePermission()) {
-                        requestStoragePermission();
-                    } else {
-                        pickFromGallery();
-                    }
+        builder.setItems(options, (dialog, which) -> {
+            if (which == 0) {
+                if (!checkCameraPermission()) {
+                    requestCameraPermission();
+                } else {
+                    pickFromCamera();
+                }
+            } else if (which == 1) {
+                if (!checkStoragePermission()) {
+                    requestStoragePermission();
+                } else {
+                    pickFromGallery();
                 }
             }
         });
@@ -156,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
                     boolean camera_accepted = grantResults[0] == PackageManager.PERMISSION_GRANTED;
                     boolean writeStorageaccepted = grantResults[1] == PackageManager.PERMISSION_GRANTED;
                     if (camera_accepted && writeStorageaccepted) {
-                        pickFromGallery();
+                        pickFromCamera();
                     } else {
                         Toast.makeText(this, "Please Enable Camera and Storage Permissions", Toast.LENGTH_LONG).show();
                     }
@@ -182,7 +174,7 @@ public class MainActivity extends AppCompatActivity {
         CropImage.activity().start(MainActivity.this);
     }
     private void pickFromCamera(){
-
+        CropImage.activity().start(MainActivity.this);
     }
 
     @Override
@@ -193,7 +185,6 @@ public class MainActivity extends AppCompatActivity {
             if (resultCode == RESULT_OK) {
                 Uri resultUri = result.getUri();
                 Picasso.with(this).load(resultUri).into(userpic);
-                imagesavetomyphonegallery();
             }
         }
         if (requestCode == 100) {
@@ -201,7 +192,14 @@ public class MainActivity extends AppCompatActivity {
             Bitmap photo = (Bitmap) data.getExtras().get("data");
             // Set the image in imageview for display
             userpic.setImageBitmap(photo);
+            Picasso.with(this).load(getImageUri(this, photo)).into(userpic);
         }
+    }
+    private Uri getImageUri(Context inContext, Bitmap inImage) {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        inImage.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
+        String path = MediaStore.Images.Media.insertImage(inContext.getContentResolver(), inImage, "Title", null);
+        return Uri.parse(path);
     }
     private void imagesavetomyphonegallery() {
         Uri images;
