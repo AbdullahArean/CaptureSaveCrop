@@ -47,5 +47,50 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Here we are initialising
+        // the text and image View
+        userpic = findViewById(R.id.set_profile_image);
+        capture = findViewById(R.id.capture);
+        crop = findViewById(R.id.crop);
+        save = findViewById(R.id.save);
+
+        // allowing permissions of gallery and camera
+        cameraPermission = new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE};
+        storagePermission = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE};
+
+        // After clicking on text we will have
+        // to choose whether to
+        // select image from camera and gallery
+        crop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showImagePicDialog();
+            }
+        });
+        capture.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent camera_intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                // Start the activity with camera_intent, and request pic id
+                startActivityForResult(camera_intent, 100);
+            }
+        });
+        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+        ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},1);
+        save.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                imagesavetomyphonegallery();
+
+            }
+        });
+
+    }
+
+    private void imagesavetomyphonegallery() {
+    }
+
+    private void showImagePicDialog() {
     }
 }
