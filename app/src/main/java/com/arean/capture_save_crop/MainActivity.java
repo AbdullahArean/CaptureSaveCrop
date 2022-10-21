@@ -1,6 +1,8 @@
 package com.arean.capture_save_crop;
 import android.Manifest;
 import android.app.AlertDialog;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -30,6 +32,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -189,7 +193,7 @@ public class MainActivity extends AppCompatActivity {
             if (resultCode == RESULT_OK) {
                 Uri resultUri = result.getUri();
                 Picasso.with(this).load(resultUri).into(userpic);
-                //savefile(resultUri);
+                imagesavetomyphonegallery();
             }
         }
         if (requestCode == 100) {
@@ -199,61 +203,38 @@ public class MainActivity extends AppCompatActivity {
             userpic.setImageBitmap(photo);
         }
     }
-    void savefile(Uri sourceuri)
-    {
-        String sourceFilename= sourceuri.getPath();
-        String destinationFilename = android.os.Environment.getExternalStorageDirectory().getPath()+ File.separatorChar+"abc.mp3";
-
-        BufferedInputStream bis = null;
-        BufferedOutputStream bos = null;
-
-        try {
-            bis = new BufferedInputStream(new FileInputStream(sourceFilename));
-            bos = new BufferedOutputStream(new FileOutputStream(destinationFilename, false));
-            byte[] buf = new byte[1024];
-            bis.read(buf);
-            do {
-                bos.write(buf);
-            } while(bis.read(buf) != -1);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (bis != null) bis.close();
-                if (bos != null) bos.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
     private void imagesavetomyphonegallery() {
+        Uri images;
+        ContentResolver contentResolver = getContentResolver();
 
-        ImageView img = (ImageView) findViewById(R.id.set_profile_image);
+        if(Build.VERSION.SDK_INT>= Build.VERSION_CODES.Q)
+        {
+            images = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
 
-        BitmapDrawable draw = (BitmapDrawable) img.getDrawable();
-        Bitmap bitmap = draw.getBitmap();
-
-        FileOutputStream outStream = null;
-        File sdCard = Environment.getExternalStorageDirectory();
-        File dir = new File(sdCard.getAbsolutePath() + "/SaveImages");
-        dir.mkdirs();
-        String fileName = String.format("%d.jpg", System.currentTimeMillis());
-        File outFile = new File(dir, fileName);
-        try {
-            outStream = new FileOutputStream(outFile);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         }
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outStream);
-        try {
-            outStream.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
+        else
+        {
+            images = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
         }
-        try {
-            outStream.close();
-        } catch (IOException e) {
+
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(MediaStore.Images.Media.DISPLAY_NAME, System.currentTimeMillis()+".jpg");
+        contentValues.put(MediaStore.Images.Media.MIME_TYPE, "images/*");
+        Uri uri = contentResolver.insert(images,contentValues);
+
+        try{
+            BitmapDrawable bitmapDrawable = (BitmapDrawable) userpic.getDrawable();
+            Bitmap bitmap = bitmapDrawable.getBitmap();
+            OutputStream outputStream = contentResolver.openOutputStream(Objects.requireNonNull(uri));
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+            Objects.requireNonNull(outputStream);
+
+        }
+
+        catch (Exception e)
+        {
             e.printStackTrace();
+
         }
     }
 }
