@@ -228,6 +228,7 @@ public class MainActivity extends AppCompatActivity {
             OutputStream outputStream = contentResolver.openOutputStream(Objects.requireNonNull(uri));
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
             Objects.requireNonNull(outputStream);
+            Toast.makeText(this, "Photo Saved Successfully in the Gallery!", Toast.LENGTH_LONG).show();
 
         }
 
